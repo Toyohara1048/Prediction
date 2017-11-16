@@ -1,0 +1,14 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+
+# videos
+videos/
+
+# Logs
+tf_log/
+
+# test
+test_codes/
+
+# Pycharm
+.idea/

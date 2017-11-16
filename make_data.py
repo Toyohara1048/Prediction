@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-ORG_FILE_NAME = "gray1-backWhite.3gp"
+ORG_FILE_NAME = "videos/gray1-backWhite.3gp"
 
 
 FRAME_RATE = 40
