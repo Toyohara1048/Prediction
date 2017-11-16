@@ -33,25 +33,21 @@ def make_generator():
                kernel_size=(1, 3, 3),
                strides=(1, 1, 1),
                padding='same',
-               dilation_rate=(1, 2, 2),
-               input_shape=(G_FRAMES, LENGTH_OF_SIDE, LENGTH_OF_SIDE, 1)),
+               dilation_rate=(1, 2, 2),),
         Conv3D(128,  # filters
                kernel_size=(1, 3, 3),
                strides=(1, 1, 1),
                padding='same',
-               dilation_rate=(1, 4, 4),
-               input_shape=(G_FRAMES, LENGTH_OF_SIDE, LENGTH_OF_SIDE, 1)),
+               dilation_rate=(1, 4, 4),),
         Conv3D(256,  # filters
                kernel_size=(1, 3, 3),
                strides=(1, 1, 1),
                padding='same',
-               dilation_rate=(1, 8, 8),
-               input_shape=(G_FRAMES, LENGTH_OF_SIDE, LENGTH_OF_SIDE, 1)),
+               dilation_rate=(1, 8, 8),),
         Conv3D(32,  # filters
                kernel_size=(G_FRAMES, 1, 1),
                strides=(1, 1, 1),
-               padding='same',
-               input_shape=(G_FRAMES, LENGTH_OF_SIDE, LENGTH_OF_SIDE, 1)),
+               padding='same',),
 
         # followings are original
         LeakyReLU(0.2),
