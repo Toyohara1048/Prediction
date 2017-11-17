@@ -22,7 +22,7 @@ def train():
     print(data.shape)
 
     # Make discriminator
-    discriminator = make_discriminator(summery=True)
+    discriminator = make_discriminator(summary=True)
     d_optimizer =Adam(lr=1e-5, beta_1=0.1)
     discriminator.compile(loss='binary_crossentropy', optimizer=d_optimizer)
 
@@ -33,7 +33,7 @@ def train():
     # dcgan = compile(loss='binary_crossentropy', optimizer=g_optimizer)
 
     #test
-    g = make_generator(summery=True)
+    g = make_generator(summary=True)
 
 
     # tensorboardの出力
