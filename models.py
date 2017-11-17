@@ -2,8 +2,8 @@ import math
 import numpy as np
 import os
 
-from keras.models import Sequential
-from keras.layers import Dense, Activation, Reshape
+from keras.models import Sequential, Model
+from keras.layers import Dense, Activation, Reshape, Input
 from keras.layers.normalization import BatchNormalization
 from keras.layers.convolutional import Conv2D, Conv3D, UpSampling2D
 from keras.layers.advanced_activations import LeakyReLU
@@ -19,7 +19,7 @@ G_FRAMES = 4
 D_FRAMES = 5
 
 
-def make_generator(summery = False):
+def make_generator(summary = False):
     model = Sequential([
         # The 5 following convolutions are from
         # https://www.semanticscholar.org/paper/Generating-the-Future-with-Adversarial-Transformer-Vondrick-Torralba/263d82ed38ddf2940c64ef74de3cdcaf76f1082d
@@ -69,12 +69,34 @@ def make_generator(summery = False):
         Activation('tanh')
     ])
 
-    if summery:
+    if summary:
         print("Generator is as follows:")
         print(model.summary())
     return model
 
-def make_discriminator(summery = False):
+def make_functional_generator(summary = False):
+    inputs = Input(shape=(G_FRAMES, LENGTH_OF_SIDE, LENGTH_OF_SIDE, 1))
+    x = Conv3D(32,          #filters
+               kernel_size=(1, 3, 3),
+               strides=(1, 1, 1),
+               padding='same',
+               dilation_rate=(1, 1, 1),
+               input_shape=(G_FRAMES, LENGTH_OF_SIDE, LENGTH_OF_SIDE, 1))(inputs)
+
+    generated_image =Activation('tanh')(x)
+
+    #cat generated_image with inputs -> images
+
+    model = Model(inputs=inputs, outputs=images)
+
+    if summary:
+        print("Generator is as follows:")
+        print(model.summary())
+
+    return model
+
+
+def make_discriminator(summary = False):
     model = Sequential([
         Conv3D(64,  # filters
                kernel_size=(1, 4, 4),
@@ -108,7 +130,26 @@ def make_discriminator(summery = False):
         Activation('sigmoid')
     ])
 
-    if summery:
+    if summary:
         print("Discriminator is as follows:")
         print(model.summary())
+    return model
+
+
+def make_functional_discriminator(summary = False):
+    inputs = Input(shape=(D_FRAMES, LENGTH_OF_SIDE, LENGTH_OF_SIDE, 1))
+    x = Conv3D(64,  # filters
+               kernel_size=(1, 4, 4),
+               strides=(1, 1, 1),
+               padding='same',
+               input_shape=(D_FRAMES, LENGTH_OF_SIDE, LENGTH_OF_SIDE, 1))(inputs)
+
+    likelihood = Activation('sigmoid')(x)
+
+    model = Model(inputs=inputs, outputs=likelihood)
+
+    if summary:
+        print("Discriminator is as follows:")
+        print(model.summary())
+
     return model
