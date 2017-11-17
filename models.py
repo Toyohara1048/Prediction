@@ -19,7 +19,7 @@ G_FRAMES = 4
 D_FRAMES = 5
 
 
-def make_generator():
+def make_generator(summery = False):
     model = Sequential([
         # The 5 following convolutions are from
         # https://www.semanticscholar.org/paper/Generating-the-Future-with-Adversarial-Transformer-Vondrick-Torralba/263d82ed38ddf2940c64ef74de3cdcaf76f1082d
@@ -33,21 +33,21 @@ def make_generator():
                kernel_size=(1, 3, 3),
                strides=(1, 1, 1),
                padding='same',
-               dilation_rate=(1, 2, 2),),
+               dilation_rate=(1, 2, 2)),
         Conv3D(128,  # filters
                kernel_size=(1, 3, 3),
                strides=(1, 1, 1),
                padding='same',
-               dilation_rate=(1, 4, 4),),
+               dilation_rate=(1, 4, 4)),
         Conv3D(256,  # filters
                kernel_size=(1, 3, 3),
                strides=(1, 1, 1),
                padding='same',
-               dilation_rate=(1, 8, 8),),
+               dilation_rate=(1, 8, 8)),
         Conv3D(32,  # filters
                kernel_size=(G_FRAMES, 1, 1),
                strides=(1, 1, 1),
-               padding='same',),
+               padding='valid'),
 
         # followings are original
         LeakyReLU(0.2),
@@ -55,7 +55,7 @@ def make_generator():
         Dense(61*61*128),
         BatchNormalization(),
         Activation('relu'),
-        Reshape((61, 61, 128), input_shape=(61*61*128)),
+        Reshape((61, 61, 128), input_shape=(61*61*128,)),
         UpSampling2D((2, 2)),
         Conv2D(64, (5, 5), padding='same'),
         BatchNormalization(),
@@ -65,36 +65,39 @@ def make_generator():
         BatchNormalization(),
         Activation('relu'),
         UpSampling2D((2, 2)),
-        Conv2D(16, (5, 5), padding='same'),
+        Conv2D(1, (5, 5), padding='same'),
         Activation('tanh')
     ])
 
+    if summery:
+        print("Generator is as follows:")
+        print(model.summary())
     return model
 
-def make_discriminator():
+def make_discriminator(summery = False):
     model = Sequential([
         Conv3D(64,  # filters
-               kernel_size=(4, 4, 4),
-               strides=(2, 2, 2),
+               kernel_size=(1, 4, 4),
+               strides=(1, 1, 1),
                padding='same',
                input_shape=(D_FRAMES, LENGTH_OF_SIDE, LENGTH_OF_SIDE, 1)),
         LeakyReLU(0.2),
         Conv3D(128,  # filters
-               kernel_size=(4, 4, 4),
-               strides=(2, 2, 2),
+               kernel_size=(1, 4, 4),
+               strides=(1, 1, 1),
                padding='same',),
         BatchNormalization(),
         LeakyReLU(0.2),
         Conv3D(256,  # filters
-               kernel_size=(4, 4, 4),
-               strides=(2, 2, 2),
+               kernel_size=(1, 4, 4),
+               strides=(1, 1, 1),
                padding='same', ),
         BatchNormalization(),
         LeakyReLU(0.2),
         Conv3D(512,  # filters
-               kernel_size=(4, 4, 4),
-               strides=(2, 2, 2),
-               padding='same', ),
+               kernel_size=(D_FRAMES, 1, 1),
+               strides=(1, 1, 1),
+               padding='valid', ),
         BatchNormalization(),
         LeakyReLU(0.2),
         Flatten(),
@@ -105,4 +108,7 @@ def make_discriminator():
         Activation('sigmoid')
     ])
 
+    if summery:
+        print("Discriminator is as follows:")
+        print(model.summary())
     return model
