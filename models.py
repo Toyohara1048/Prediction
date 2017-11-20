@@ -76,49 +76,49 @@ def make_generator(summary = False):
 
 def make_functional_generator(summary = False):
     inputs = Input(shape=(G_FRAMES, LENGTH_OF_SIDE, LENGTH_OF_SIDE, 1))
-    conv_1 = Conv3D(32,          #filters
+    x = Conv3D(32,          #filters
                kernel_size=(1, 3, 3),
                strides=(1, 1, 1),
                padding='same',
                dilation_rate=(1, 1, 1),
                input_shape=(G_FRAMES, LENGTH_OF_SIDE, LENGTH_OF_SIDE, 1))(inputs)
-    conv_2 = Conv3D(64,  # filters
+    x = Conv3D(64,  # filters
                kernel_size=(1, 3, 3),
                strides=(1, 1, 1),
                padding='same',
-               dilation_rate=(1, 2, 2))(conv_1)
-    conv_3 = Conv3D(128,  # filters
+               dilation_rate=(1, 2, 2))(x)
+    x = Conv3D(128,  # filters
                kernel_size=(1, 3, 3),
                strides=(1, 1, 1),
                padding='same',
-               dilation_rate=(1, 4, 4))(conv_2)
-    conv_4 = Conv3D(256,  # filters
+               dilation_rate=(1, 4, 4))(x)
+    x = Conv3D(256,  # filters
                kernel_size=(1, 3, 3),
                strides=(1, 1, 1),
                padding='same',
-               dilation_rate=(1, 8, 8))(conv_3)
-    conv_5 = Conv3D(32,  # filters
+               dilation_rate=(1, 8, 8))(x)
+    x = Conv3D(32,  # filters
                kernel_size=(G_FRAMES, 1, 1),
                strides=(1, 1, 1),
-               padding='valid')(conv_4)
+               padding='valid')(x)
 
-    act_1           = LeakyReLU(0.2)(conv_5)
-    activated_vec   = Flatten()(act_1)
-    fc_1            = Dense(61*61*128)(activated_vec)
-    bn_1            = BatchNormalization()(fc_1)
-    act_2           = Activation('relu')(bn_1)
-    img_61          = Reshape((61, 61, 128), input_shape=(61*61*128,))(act_2)
-    img_122         = UpSampling2D((2, 2))(img_61)
-    conv_122        = Conv2D(64, (5, 5), padding='same')(img_122)
-    bn_conv_122     = BatchNormalization()(conv_122)
-    activated_122   = Activation('relu')(bn_conv_122)
-    img_244         = UpSampling2D((2, 2))(activated_122)
-    conv_244        = Conv2D(32, (5, 5), padding='same')(img_244)
-    bn_conv_244     = BatchNormalization()(conv_244)
-    activated_244   = Activation('relu')(bn_conv_244)
-    img_488         = UpSampling2D((2, 2))(activated_244)
-    conv_488        = Conv2D(1, (5, 5), padding='same')(img_488)
-    generated_image = Activation('tanh')(conv_488)
+    x = LeakyReLU(0.2)(x)
+    x = Flatten()(x)
+    x = Dense(61*61*128)(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+    x = Reshape((61, 61, 128), input_shape=(61*61*128,))(x)
+    x = UpSampling2D((2, 2))(x)
+    x = Conv2D(64, (5, 5), padding='same')(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+    x = UpSampling2D((2, 2))(x)
+    x = Conv2D(32, (5, 5), padding='same')(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+    x = UpSampling2D((2, 2))(x)
+    x = Conv2D(1, (5, 5), padding='same')(x)
+    generated_image = Activation('tanh')(x)
 
     #cat generated_image with inputs -> images
     reshaped_gen_image = Reshape((1, 488, 488, 1), input_shape=(488, 488, 1))(generated_image)
@@ -176,41 +176,41 @@ def make_discriminator(summary = False):
 
 def make_functional_discriminator(summary = False):
     inputs = Input(shape=(D_FRAMES, LENGTH_OF_SIDE, LENGTH_OF_SIDE, 1))
-    conv_1 = Conv3D(64,  # filters
+    x = Conv3D(64,  # filters
                kernel_size=(1, 4, 4),
                strides=(1, 1, 1),
                padding='same',
                input_shape=(D_FRAMES, LENGTH_OF_SIDE, LENGTH_OF_SIDE, 1))(inputs)
-    act_conv1 = LeakyReLU(0.2)(conv_1)
+    x = LeakyReLU(0.2)(x)
 
-    conv_2 = Conv3D(128,  # filters
+    x = Conv3D(128,  # filters
                kernel_size=(1, 4, 4),
                strides=(1, 1, 1),
-               padding='same')(act_conv1)
-    bn_conv_2 = BatchNormalization()(conv_2)
-    act_conv2 = LeakyReLU(0.2)(bn_conv_2)
+               padding='same')(x)
+    x = BatchNormalization()(x)
+    x = LeakyReLU(0.2)(x)
 
-    conv_3 = Conv3D(256,  # filters
+    x = Conv3D(256,  # filters
                kernel_size=(1, 4, 4),
                strides=(1, 1, 1),
-               padding='same')(act_conv2)
-    bn_conv_3 = BatchNormalization()(conv_3)
-    act_conv3 = LeakyReLU(0.2)(bn_conv_3)
+               padding='same')(x)
+    x = BatchNormalization()(x)
+    x = LeakyReLU(0.2)(x)
 
-    conv_4 = Conv3D(512,  # filters
+    x = Conv3D(512,  # filters
                kernel_size=(D_FRAMES, 1, 1),
                strides=(1, 1, 1),
-               padding='valid')(act_conv3)
-    bn_conv_4 = BatchNormalization()(conv_4)
-    act_conv4 = LeakyReLU(0.2)(bn_conv_4)
+               padding='valid')(x)
+    x = BatchNormalization()(x)
+    x = LeakyReLU(0.2)(x)
 
-    vec = Flatten()(act_conv4)
-    fc_1 = Dense(256)(vec)
-    act_fc_1 = LeakyReLU(0.2)(fc_1)
-    drop_fc_1 = Dropout(0.5)(act_fc_1)
-    fc_2 = Dense(1)(drop_fc_1)
+    x = Flatten()(x)
+    x = Dense(256)(x)
+    x = LeakyReLU(0.2)(x)
+    x = Dropout(0.5)(x)
+    x = Dense(1)(x)
 
-    likelihood = Activation('sigmoid')(fc_2)
+    likelihood = Activation('sigmoid')(x)
 
     model = Model(inputs=inputs, outputs=likelihood)
 
