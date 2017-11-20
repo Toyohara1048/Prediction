@@ -4,6 +4,7 @@ import os
 
 from keras.models import Sequential, Model
 from keras.layers import Dense, Activation, Reshape, Input, concatenate
+from keras.layers.pooling import MaxPooling3D
 from keras.layers.normalization import BatchNormalization
 from keras.layers.convolutional import Conv2D, Conv3D, UpSampling2D
 from keras.layers.advanced_activations import LeakyReLU
@@ -76,44 +77,45 @@ def make_generator(summary = False):
 
 def make_functional_generator(summary = False):
     inputs = Input(shape=(G_FRAMES, LENGTH_OF_SIDE, LENGTH_OF_SIDE, 1))
-    x = Conv3D(32,          #filters
+    x = Conv3D(8,          #filters
                kernel_size=(1, 3, 3),
                strides=(1, 1, 1),
                padding='same',
                dilation_rate=(1, 1, 1),
                input_shape=(G_FRAMES, LENGTH_OF_SIDE, LENGTH_OF_SIDE, 1))(inputs)
-    x = Conv3D(64,  # filters
+    x = Conv3D(16,  # filters
                kernel_size=(1, 3, 3),
                strides=(1, 1, 1),
                padding='same',
                dilation_rate=(1, 2, 2))(x)
-    x = Conv3D(128,  # filters
+    x = Conv3D(32,  # filters
                kernel_size=(1, 3, 3),
                strides=(1, 1, 1),
                padding='same',
                dilation_rate=(1, 4, 4))(x)
-    x = Conv3D(256,  # filters
+    x = Conv3D(32,  # filters
                kernel_size=(1, 3, 3),
                strides=(1, 1, 1),
                padding='same',
                dilation_rate=(1, 8, 8))(x)
-    x = Conv3D(32,  # filters
+    x = Conv3D(4,  # filters
                kernel_size=(G_FRAMES, 1, 1),
                strides=(1, 1, 1),
                padding='valid')(x)
 
+    x = MaxPooling3D(pool_size=(1, 7, 7), strides=None, padding='valid')(x)
     x = LeakyReLU(0.2)(x)
     x = Flatten()(x)
-    x = Dense(61*61*128)(x)
+    x = Dense(61*61*1)(x)
     x = BatchNormalization()(x)
     x = Activation('relu')(x)
-    x = Reshape((61, 61, 128), input_shape=(61*61*128,))(x)
+    x = Reshape((61, 61, 1), input_shape=(61*61*1,))(x)
     x = UpSampling2D((2, 2))(x)
-    x = Conv2D(64, (5, 5), padding='same')(x)
+    x = Conv2D(4, (5, 5), padding='same')(x)
     x = BatchNormalization()(x)
     x = Activation('relu')(x)
     x = UpSampling2D((2, 2))(x)
-    x = Conv2D(32, (5, 5), padding='same')(x)
+    x = Conv2D(2, (5, 5), padding='same')(x)
     x = BatchNormalization()(x)
     x = Activation('relu')(x)
     x = UpSampling2D((2, 2))(x)
@@ -176,36 +178,36 @@ def make_discriminator(summary = False):
 
 def make_functional_discriminator(summary = False):
     inputs = Input(shape=(D_FRAMES, LENGTH_OF_SIDE, LENGTH_OF_SIDE, 1))
-    x = Conv3D(64,  # filters
+    x = Conv3D(16,  # filters
                kernel_size=(1, 4, 4),
                strides=(1, 1, 1),
                padding='same',
                input_shape=(D_FRAMES, LENGTH_OF_SIDE, LENGTH_OF_SIDE, 1))(inputs)
     x = LeakyReLU(0.2)(x)
 
-    x = Conv3D(128,  # filters
+    x = Conv3D(32,  # filters
                kernel_size=(1, 4, 4),
                strides=(1, 1, 1),
                padding='same')(x)
     x = BatchNormalization()(x)
     x = LeakyReLU(0.2)(x)
 
-    x = Conv3D(256,  # filters
+    x = Conv3D(32,  # filters
                kernel_size=(1, 4, 4),
                strides=(1, 1, 1),
                padding='same')(x)
     x = BatchNormalization()(x)
     x = LeakyReLU(0.2)(x)
 
-    x = Conv3D(512,  # filters
+    x = Conv3D(16,  # filters
                kernel_size=(D_FRAMES, 1, 1),
                strides=(1, 1, 1),
                padding='valid')(x)
+    x = MaxPooling3D(pool_size=(1, 7, 7), strides=None, padding='valid')(x)
     x = BatchNormalization()(x)
     x = LeakyReLU(0.2)(x)
-
     x = Flatten()(x)
-    x = Dense(256)(x)
+    x = Dense(128)(x)
     x = LeakyReLU(0.2)(x)
     x = Dropout(0.5)(x)
     x = Dense(1)(x)

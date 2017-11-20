@@ -1,12 +1,15 @@
 import keras
 from keras.models import Model
-from keras.optimizers import RMSprop
+from keras.layers import Input
 import keras.callbacks
 from keras.optimizers import Adam
+import keras.backend.tensorflow_backend as KTF
+
 
 import numpy as np
 import time
 import os
+import tensorflow as tf
 from PIL import Image
 
 from load_video import load_data
@@ -14,11 +17,31 @@ from models import make_functional_generator, make_functional_discriminator
 
 # Hyper paremeters
 NUM_OF_DATA = 22
-BATCH_SIZE = 1
-NUM_EPOCH = 5
-GENERATED_IMAGE_PATH = 'generated_image/'
+BATCH_SIZE = 2
+NUM_EPOCH = 100
+NUM_FRAME = 5
+GENERATED_IMAGE_PATH = '/media/hdd/Toyohara/PredictNextPose/generated_image/'
+
+def combine_images(generated_image):
+    print(generated_image.shape)
+    total = generated_image.shape[0]
+    width = generated_image.shape[1]
+    height = generated_image.shape[2]
+    combine_image = np.zeros((height*BATCH_SIZE, width*5), dtype= generated_image.dtype)
+
+    for index, image in enumerate(generated_image):
+        i = int(index / NUM_FRAME)
+        j = index % NUM_FRAME
+        combine_image[width*i:width*(i+1), height*j:height*(j+1)] = image[0:488, 0:488]
+
+    return combine_image
 
 def train():
+    # configuration of GPU usage
+    config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True))
+    session = tf.Session(config=config)
+    KTF.set_session(session)
+
     data = load_data(NUM_OF_DATA)
     print(data.shape)
 
@@ -29,9 +52,10 @@ def train():
 
     discriminator.trainable = False
     generator = make_functional_generator(summary=True)
-    generated_image = generator(generator.input)
+    input = Input(shape=(4, 488, 488, 1))
+    generated_image = generator(input)
     likelihood = discriminator(generated_image)
-    dcgan = Model(inputs=generator.get_input_at(0), outputs=likelihood)
+    dcgan = Model(inputs=input, outputs=likelihood)
     g_optimizer = Adam(lr=2e-4, beta_1=0.5)
     dcgan.compile(loss='binary_crossentropy', optimizer=g_optimizer)
 
@@ -49,11 +73,15 @@ def train():
             five_frame_image_batch = data[index*BATCH_SIZE:(index+1)*BATCH_SIZE]
             # generate image (4 frames -> next 1 frame)
             generated_frames = generator.predict(five_frame_image_batch[0:BATCH_SIZE, 0:4])
+            print(five_frame_image_batch[0:BATCH_SIZE, 0:4].shape)
 
-            if not os.path.exists(GENERATED_IMAGE_PATH):
-                os.mkdir(GENERATED_IMAGE_PATH)
-            Image.fromarray(generated_frames.astype(np.uint8))\
-                .save(GENERATED_IMAGE_PATH+'%04d_%04d.png' % (epoch, index))
+            if index == 0:
+                if not os.path.exists(GENERATED_IMAGE_PATH):
+                    os.mkdir(GENERATED_IMAGE_PATH)
+                image = combine_images(generated_frames.reshape(5 * BATCH_SIZE, 488, 488))
+                Image.fromarray(image.astype(np.uint8)) \
+                    .save(GENERATED_IMAGE_PATH + '%04d_%04d.png' % (epoch, index))
+
 
             # update discriminator
             X = np.concatenate((five_frame_image_batch, generated_frames))
@@ -63,6 +91,7 @@ def train():
             # update generator
             g_loss = dcgan.train_on_batch(five_frame_image_batch[0:BATCH_SIZE, 0:4], [1]*BATCH_SIZE)
             print("epoch: %d, batch: %d, g_loss: %f, d_loss: %f" % (epoch, index, g_loss, d_loss))
+
 
 if __name__ == "__main__":
     train()
