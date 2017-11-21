@@ -5,6 +5,11 @@ ORG_FILE_NAME = "videos/gray1-backWhite.3gp"
 
 
 FRAME_RATE = 40
+DEPTH = 5
+LENGTH_OF_SIDE = 488
+
+start_num = 141
+end_num = 150
 
 # 元ビデオファイル読み込み
 org = cv2.VideoCapture(ORG_FILE_NAME)
@@ -12,50 +17,33 @@ org = cv2.VideoCapture(ORG_FILE_NAME)
 # 保存ビデオファイルの準備
 end_flag, c_frame = org.read()
 height, width, channels = c_frame.shape
-# rec = cv2.VideoWriter(GRAY_FILE_NAME, \
-#                       cv2.VideoWriter_fourcc(*'MJPG'), \
-#                       FRAME_RATE, \
-#                       (width, height), \
-#                       False)
 
-print(width)
-print(height)
 
-name = 142
-
-start_num = 141
-end_num = 142
-
-# Define the codec and create VideoWriter object
-fourcc = cv2.VideoWriter_fourcc(*'MJPG')
-rec = cv2.VideoWriter("videos/"+str(name)+".avi",fourcc, FRAME_RATE, (488,488))
-
-# 変換処理ループ
-count = 0
-while end_flag == True:
+# 動画の読み込み
+video = np.array([], dtype=np.uint8)
+frame_count = 0
+while end_flag is True:
     # cropping
-    cropped = c_frame[0:488, 80:568]
-
-    # フレーム表示
-    cv2.imshow("Original", cropped)
-
-    if (count >= name and count < name+5):
-        rec.write(cropped)
-
-
-
-    # Qキーで終了
-    key = cv2.waitKey(1)
-    if key == 0x71:
-        break
+    cropped = c_frame[0:LENGTH_OF_SIDE, 80:80+LENGTH_OF_SIDE]
+    video = np.append(video, np.array(cropped[0:LENGTH_OF_SIDE, 0:LENGTH_OF_SIDE]))
 
     # 次のフレーム読み込み
     end_flag, c_frame = org.read()
-    count+=1
+    frame_count += 1
 
-print(cropped.shape)
+video = np.reshape(video, (frame_count, LENGTH_OF_SIDE, LENGTH_OF_SIDE, 3))
+
+
+# Define the codec and create VideoWriter object
+fourcc = cv2.VideoWriter_fourcc(*'MJPG')
+
+# 指定フレームごとに切り分け
+for i in range(start_num, end_num):
+    rec = cv2.VideoWriter("video/" + str(i) + ".avi", fourcc, FRAME_RATE, (LENGTH_OF_SIDE, LENGTH_OF_SIDE))
+    for j in range(DEPTH):
+        rec.write(video[i-start_num+j, 0:LENGTH_OF_SIDE, 0:LENGTH_OF_SIDE, 0:3])
+    rec.release()
 
 # 終了処理
 cv2.destroyAllWindows()
 org.release()
-rec.release()

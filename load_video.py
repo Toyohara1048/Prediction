@@ -15,7 +15,7 @@ def load_5frames(name):
 
     train = np.array([], dtype=np.uint8)
 
-    file_name = "videos/" + str(name) + ".avi"
+    file_name = "video/" + str(name) + ".avi"
     if not os.path.exists(file_name):
         return None
 
@@ -61,5 +61,7 @@ def load_data(num_of_data):
 # cv2.imshow("test", test)
 # cv2.waitKey(0)
 
-#data = load_5frames(200)
-#print(data)
+data = load_5frames(130)
+print(data.shape)
+cv2.imshow("tets", data[0])
+cv2.waitKey(0)
