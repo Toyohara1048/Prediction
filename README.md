@@ -4,5 +4,5 @@
 
 ## 環境
 Python 3.5  
-Keras 2.0.6
+Keras 2.0.6  
 tensorflow 1.2.1
