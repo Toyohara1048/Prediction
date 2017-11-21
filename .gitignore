@@ -12,3 +12,6 @@ test_codes/
 
 # Pycharm
 .idea/
+
+# generated images
+generated_image/

@@ -13,18 +13,21 @@ import tensorflow as tf
 from PIL import Image
 
 from load_video import load_data
-from models import make_functional_generator, make_functional_discriminator
+from models import make_generator, make_discriminator
 
 # Hyper paremeters
 NUM_OF_DATA = 22
 BATCH_SIZE = 2
 NUM_EPOCH = 100
 NUM_FRAME = 5
+
+# Image saving
+local = True    #Work on local mac or linux with GPU?
 GENERATED_IMAGE_PATH = '/media/hdd/Toyohara/PredictNextPose/generated_image/'
+LOCAL_GENERATED_IMAGE_PATH = 'generated_image/'
+
 
 def combine_images(generated_image):
-    print(generated_image.shape)
-    total = generated_image.shape[0]
     width = generated_image.shape[1]
     height = generated_image.shape[2]
     combine_image = np.zeros((height*BATCH_SIZE, width*5), dtype= generated_image.dtype)
@@ -37,21 +40,28 @@ def combine_images(generated_image):
     return combine_image
 
 def train():
+    # about path for saving images
+    if local:
+        path = LOCAL_GENERATED_IMAGE_PATH
+    else:
+        path = GENERATED_IMAGE_PATH
+
     # configuration of GPU usage
     config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True))
     session = tf.Session(config=config)
     KTF.set_session(session)
 
     data = load_data(NUM_OF_DATA)
+    print("Data.shape is:")
     print(data.shape)
 
     # Make discriminator
-    discriminator = make_functional_discriminator(summary=True)
+    discriminator = make_discriminator(summary=True)
     d_optimizer =Adam(lr=1e-5, beta_1=0.1)
     discriminator.compile(loss='binary_crossentropy', optimizer=d_optimizer)
 
     discriminator.trainable = False
-    generator = make_functional_generator(summary=True)
+    generator = make_generator(summary=True)
     input = Input(shape=(4, 488, 488, 1))
     generated_image = generator(input)
     likelihood = discriminator(generated_image)
@@ -73,14 +83,13 @@ def train():
             five_frame_image_batch = data[index*BATCH_SIZE:(index+1)*BATCH_SIZE]
             # generate image (4 frames -> next 1 frame)
             generated_frames = generator.predict(five_frame_image_batch[0:BATCH_SIZE, 0:4])
-            print(five_frame_image_batch[0:BATCH_SIZE, 0:4].shape)
 
             if index == 0:
-                if not os.path.exists(GENERATED_IMAGE_PATH):
-                    os.mkdir(GENERATED_IMAGE_PATH)
+                if not os.path.exists(path):
+                    os.mkdir(path)
                 image = combine_images(generated_frames.reshape(5 * BATCH_SIZE, 488, 488))
                 Image.fromarray(image.astype(np.uint8)) \
-                    .save(GENERATED_IMAGE_PATH + '%04d_%04d.png' % (epoch, index))
+                    .save(path + '%04d_%04d.png' % (epoch, index))
 
 
             # update discriminator
