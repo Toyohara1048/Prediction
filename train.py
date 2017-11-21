@@ -16,7 +16,7 @@ from load_video import load_data
 from models import make_generator, make_discriminator
 
 # Hyper paremeters
-NUM_OF_DATA = 22
+NUM_OF_DATA = 140
 BATCH_SIZE = 2
 NUM_EPOCH = 100
 NUM_FRAME = 5
@@ -25,6 +25,10 @@ NUM_FRAME = 5
 local = True    #Work on local mac or linux with GPU?
 GENERATED_IMAGE_PATH = '/media/hdd/Toyohara/PredictNextPose/generated_image/'
 LOCAL_GENERATED_IMAGE_PATH = 'generated_image/'
+
+# Weight saving
+WEIGHT_PATH = '/media/hdd/Toyohara/PredictNextPose/weight/'
+LOCAL_WEIGHT_PATH = 'weight/'
 
 
 def combine_images(generated_image):
@@ -100,6 +104,15 @@ def train():
             # update generator
             g_loss = dcgan.train_on_batch(five_frame_image_batch[0:BATCH_SIZE, 0:4], [1]*BATCH_SIZE)
             print("epoch: %d, batch: %d, g_loss: %f, d_loss: %f" % (epoch, index, g_loss, d_loss))
+
+            # save weights
+            if local:
+                weight_path = LOCAL_WEIGHT_PATH
+            else:
+                weight_path = WEIGHT_PATH
+
+            generator.save_weights(weight_path+'generator.h5')
+            discriminator.save_weights(weight_path+'discriminator.h5')
 
 
 if __name__ == "__main__":

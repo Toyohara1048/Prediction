@@ -23,6 +23,9 @@ print(height)
 
 name = 142
 
+start_num = 141
+end_num = 142
+
 # Define the codec and create VideoWriter object
 fourcc = cv2.VideoWriter_fourcc(*'MJPG')
 rec = cv2.VideoWriter("videos/"+str(name)+".avi",fourcc, FRAME_RATE, (488,488))
