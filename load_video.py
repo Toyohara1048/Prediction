@@ -1,6 +1,6 @@
 import numpy as np
 import cv2
-
+import os
 
 NUM_OF_FRAMES = 5
 LENGTH_OF_SIDE = 488
@@ -15,7 +15,10 @@ def load_5frames(name):
 
     train = np.array([], dtype=np.uint8)
 
-    file_name = "videos/"+str(name)+".avi"
+    file_name = "videos/" + str(name) + ".avi"
+    if not os.path.exists(file_name):
+        return None
+
     org = cv2.VideoCapture(file_name)
     end_flag, c_frame = org.read()
 
@@ -43,7 +46,9 @@ def load_data(num_of_data):
 
     data = np.array([], dtype=np.uint8)
     for i in range(num_of_data):
-        data = np.append(data, load_5frames(i))
+        loaded_5frame = load_5frames(i)
+        if loaded_5frame is not None:
+            data = np.append(data, load_5frames(i))
 
     data = data.reshape(num_of_data, NUM_OF_FRAMES, LENGTH_OF_SIDE, LENGTH_OF_SIDE, 1)
 
@@ -55,3 +60,6 @@ def load_data(num_of_data):
 # print(test.shape)
 # cv2.imshow("test", test)
 # cv2.waitKey(0)
+
+#data = load_5frames(200)
+#print(data)

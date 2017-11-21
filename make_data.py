@@ -21,7 +21,7 @@ height, width, channels = c_frame.shape
 print(width)
 print(height)
 
-name = 21
+name = 142
 
 # Define the codec and create VideoWriter object
 fourcc = cv2.VideoWriter_fourcc(*'MJPG')
