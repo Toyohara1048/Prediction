@@ -122,6 +122,7 @@ def make_sequential_generator(summary = False):
                dilation_rate=(1, 1, 1))(x)
     x = BatchNormalization()(x)
     x = LeakyReLU(0.2)(x)
+    x = Flatten()(x)
     x = Reshape((G_FRAMES, 32), input_shape=(G_FRAMES*32,))(x)
     x = LSTM(1024, input_shape=(G_FRAMES, 32))(x)
     x = Dense(61 * 61 * 1)(x)
@@ -194,6 +195,3 @@ def make_discriminator(summary = False):
         print(model.summary())
 
     return model
-
-
-#model = make_sequential_generator(summary=True)
