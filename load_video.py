@@ -64,19 +64,20 @@ def load_data(num_of_data):
 
     return data
 
-# test
-# data = load_data(6)
-# test = data[1][0][1]
-# print(test.shape)
-# cv2.imshow("test", test)
-# cv2.waitKey(0)
+
 #
 # data = load_5frames(0)
-# print(data.shape)
-# cv2.imshow("tets", data[0])
-# cv2.waitKey(0)
-#
 # img = data[0]
+# nLabels, labeledImage, stats, centeroids = cv2.connectedComponentsWithStats(img)
+# print(nLabels)
+# print(centeroids)
+# print(stats)
+# img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+# cv2.circle(img, (int(centeroids[2][0]), int(centeroids[2][1])), 5, (255, 0, 0), -1)
+# cv2.imshow("test", img)
+# cv2.waitKey(0)
+
+
 # height, width = img.shape[:2]
 # size = (height/2, width/2)
 # halfImg = cv2.resize(img, None, fx=1/4, fy=1/4)

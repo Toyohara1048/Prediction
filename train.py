@@ -13,7 +13,7 @@ import tensorflow as tf
 from PIL import Image
 
 from load_video import load_data
-from models import make_generator, make_discriminator
+from models import make_generator, make_discriminator, make_sequential_generator
 
 # Hyper paremeters
 NUM_OF_DATA = 100
@@ -23,7 +23,7 @@ NUM_FRAME = 5
 LENTH_OF_SIDE = 122
 
 # Image saving
-local = False    #Work on local mac or linux with GPU?
+local = True    #Work on local mac or linux with GPU?
 GENERATED_IMAGE_PATH = '/media/hdd/Toyohara/PredictNextPose/generated_image/'
 LOCAL_GENERATED_IMAGE_PATH = 'generated_image/'
 
@@ -67,7 +67,8 @@ def train():
     discriminator.compile(loss='binary_crossentropy', optimizer=d_optimizer)
 
     discriminator.trainable = False
-    generator = make_generator(summary=True)
+    #generator = make_generator(summary=True)
+    generator = make_sequential_generator(summary=True)
     input = Input(shape=(NUM_FRAME-1, LENTH_OF_SIDE, LENTH_OF_SIDE, 1))
     generated_image = generator(input)
     likelihood = discriminator(generated_image)

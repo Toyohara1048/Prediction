@@ -101,27 +101,36 @@ def make_generator(summary = False):
 
 def make_sequential_generator(summary = False):
     inputs = Input(shape=(G_FRAMES, LENGTH_OF_SIDE, LENGTH_OF_SIDE, 1))
-    x = Conv3D(32,  # filters
-               kernel_size=(1, 3, 3),
-               strides=(1, 1, 1),
+    x = Conv3D(8,  # filters
+               kernel_size=(1, 5, 5),
+               strides=(1, 4, 4),
                padding='valid',
                dilation_rate=(1, 1, 1),
                input_shape=(G_FRAMES, LENGTH_OF_SIDE, LENGTH_OF_SIDE, 1))(inputs)
     x = LeakyReLU(0.2)(x)
-    x = Conv3D(64,  # filters
-               kernel_size=(1, 3, 3),
-               strides=(1, 1, 1),
+    x = Conv3D(16,  # filters
+               kernel_size=(1, 5, 5),
+               strides=(1, 4, 4),
                padding='valid',
                dilation_rate=(1, 1, 1))(x)
     x = BatchNormalization()(x)
     x = LeakyReLU(0.2)(x)
-    x = Conv3D(128,  # filters
-               kernel_size=(1, 3, 3),
-               strides=(1, 1, 1),
+    x = Conv3D(32,  # filters
+               kernel_size=(1, 5, 5),
+               strides=(1, 4, 4),
                padding='valid',
                dilation_rate=(1, 1, 1))(x)
-
-
+    x = BatchNormalization()(x)
+    x = LeakyReLU(0.2)(x)
+    x = Reshape((G_FRAMES, 32), input_shape=(G_FRAMES*32,))(x)
+    x = LSTM(1024, input_shape=(G_FRAMES, 32))(x)
+    x = Dense(61 * 61 * 1)(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+    x = Reshape((61, 61, 1), input_shape=(61 * 61 * 1,))(x)
+    x = UpSampling2D((2, 2))(x)
+    x = Conv2D(16, (5, 5), padding='same')(x)
+    x = BatchNormalization()(x)
     x = Conv2D(1, (5, 5), padding='same')(x)
     generated_image = Activation('tanh')(x)
 
@@ -185,3 +194,6 @@ def make_discriminator(summary = False):
         print(model.summary())
 
     return model
+
+
+#model = make_sequential_generator(summary=True)
