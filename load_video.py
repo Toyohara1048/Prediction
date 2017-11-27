@@ -2,8 +2,10 @@ import numpy as np
 import cv2
 import os
 
+LOCAL = True
+
 NUM_OF_FRAMES = 5
-LENGTH_OF_SIDE = 488
+LENGTH_OF_SIDE = 122
 
 
 def load_5frames(name):
@@ -15,7 +17,10 @@ def load_5frames(name):
 
     train = np.array([], dtype=np.uint8)
 
-    file_name = "video/" + str(name) + ".avi"
+    if LOCAL:
+        file_name = "videos/" + str(name) + ".avi"
+    else:
+        file_name = "/media/hdd/Toyohara/PredictNextPose/videos/" + str(name) + ".avi"
     if not os.path.exists(file_name):
         return None
 
@@ -26,7 +31,10 @@ def load_5frames(name):
 
         gray = cv2.cvtColor(c_frame, cv2.COLOR_BGR2GRAY)
 
-        train = np.append(train, np.array(gray[0:488, 0:488]))
+        quarter = cv2.resize(gray, None, fx=1/4, fy=1/4)
+
+        #train = np.append(train, np.array(gray[0:488, 0:488]))
+        train = np.append(train, np.array(quarter[0:122, 0:122]))
 
         # 次のフレーム読み込み
         end_flag, c_frame = org.read()
@@ -45,12 +53,14 @@ def load_data(num_of_data):
     print("Loading %d data" % num_of_data)
 
     data = np.array([], dtype=np.uint8)
+    count = 0
     for i in range(num_of_data):
         loaded_5frame = load_5frames(i)
         if loaded_5frame is not None:
             data = np.append(data, load_5frames(i))
+            count += 1
 
-    data = data.reshape(num_of_data, NUM_OF_FRAMES, LENGTH_OF_SIDE, LENGTH_OF_SIDE, 1)
+    data = data.reshape(count, NUM_OF_FRAMES, LENGTH_OF_SIDE, LENGTH_OF_SIDE, 1)
 
     return data
 
@@ -60,8 +70,16 @@ def load_data(num_of_data):
 # print(test.shape)
 # cv2.imshow("test", test)
 # cv2.waitKey(0)
-
-data = load_5frames(130)
-print(data.shape)
-cv2.imshow("tets", data[0])
-cv2.waitKey(0)
+#
+# data = load_5frames(0)
+# print(data.shape)
+# cv2.imshow("tets", data[0])
+# cv2.waitKey(0)
+#
+# img = data[0]
+# height, width = img.shape[:2]
+# size = (height/2, width/2)
+# halfImg = cv2.resize(img, None, fx=1/4, fy=1/4)
+# cv2.imshow("half", halfImg)
+# print(halfImg.shape)
+# cv2.waitKey(0)

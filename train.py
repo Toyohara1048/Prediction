@@ -16,13 +16,14 @@ from load_video import load_data
 from models import make_generator, make_discriminator
 
 # Hyper paremeters
-NUM_OF_DATA = 140
+NUM_OF_DATA = 100
 BATCH_SIZE = 2
 NUM_EPOCH = 100
 NUM_FRAME = 5
+LENTH_OF_SIDE = 122
 
 # Image saving
-local = True    #Work on local mac or linux with GPU?
+local = False    #Work on local mac or linux with GPU?
 GENERATED_IMAGE_PATH = '/media/hdd/Toyohara/PredictNextPose/generated_image/'
 LOCAL_GENERATED_IMAGE_PATH = 'generated_image/'
 
@@ -39,7 +40,7 @@ def combine_images(generated_image):
     for index, image in enumerate(generated_image):
         i = int(index / NUM_FRAME)
         j = index % NUM_FRAME
-        combine_image[width*i:width*(i+1), height*j:height*(j+1)] = image[0:488, 0:488]
+        combine_image[width*i:width*(i+1), height*j:height*(j+1)] = image[0:LENTH_OF_SIDE, 0:LENTH_OF_SIDE]
 
     return combine_image
 
@@ -56,6 +57,7 @@ def train():
     KTF.set_session(session)
 
     data = load_data(NUM_OF_DATA)
+    data = (data.astype(np.float32) - 127.5) / 127.5
     print("Data.shape is:")
     print(data.shape)
 
@@ -66,7 +68,7 @@ def train():
 
     discriminator.trainable = False
     generator = make_generator(summary=True)
-    input = Input(shape=(4, 488, 488, 1))
+    input = Input(shape=(NUM_FRAME-1, LENTH_OF_SIDE, LENTH_OF_SIDE, 1))
     generated_image = generator(input)
     likelihood = discriminator(generated_image)
     dcgan = Model(inputs=input, outputs=likelihood)
@@ -88,10 +90,11 @@ def train():
             # generate image (4 frames -> next 1 frame)
             generated_frames = generator.predict(five_frame_image_batch[0:BATCH_SIZE, 0:4])
 
-            if index == 0:
+            if index%20 == 0:
                 if not os.path.exists(path):
                     os.mkdir(path)
-                image = combine_images(generated_frames.reshape(5 * BATCH_SIZE, 488, 488))
+                image = combine_images(generated_frames.reshape(5 * BATCH_SIZE, LENTH_OF_SIDE, LENTH_OF_SIDE))
+                image = image*127.5 + 127.5
                 Image.fromarray(image.astype(np.uint8)) \
                     .save(path + '%04d_%04d.png' % (epoch, index))
 
