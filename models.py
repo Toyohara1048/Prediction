@@ -199,34 +199,41 @@ def make_discriminator(summary = False):
 def make_sequential_discriminator(summary = False):
     inputs = Input(shape=(D_FRAMES, LENGTH_OF_SIDE, LENGTH_OF_SIDE, 1))
     x = Conv3D(32,  # filters
-               kernel_size=(1, 4, 4),
-               strides=(1, 1, 1),
-               padding='same',
+               kernel_size=(1, 5, 5),
+               strides=(1, 2, 2),
+               padding='valid',
                input_shape=(D_FRAMES, LENGTH_OF_SIDE, LENGTH_OF_SIDE, 1))(inputs)
     x = LeakyReLU(0.2)(x)
 
     x = Conv3D(64,  # filters
-               kernel_size=(1, 4, 4),
-               strides=(1, 1, 1),
-               padding='same')(x)
+               kernel_size=(1, 5, 5),
+               strides=(1, 2, 2),
+               padding='valid')(x)
     x = BatchNormalization()(x)
     x = LeakyReLU(0.2)(x)
-
-    # x = Conv3D(32,  # filters
-    #            kernel_size=(1, 4, 4),
-    #            strides=(1, 1, 1),
-    #            padding='same')(x)
-    # x = BatchNormalization()(x)
-    # x = LeakyReLU(0.2)(x)
-
-    x = Conv3D(16,  # filters
-               kernel_size=(D_FRAMES, 1, 1),
+    x = Conv3D(128,  # filters
+               kernel_size=(1, 5, 5),
+               strides=(1, 2, 2),
+               padding='valid')(x)
+    x = BatchNormalization()(x)
+    x = LeakyReLU(0.2)(x)
+    x = Conv3D(256,  # filters
+               kernel_size=(1, 5, 5),
+               strides=(1, 2, 2),
+               padding='valid')(x)
+    x = BatchNormalization()(x)
+    x = LeakyReLU(0.2)(x)
+    x = Conv3D(256,  # filters
+               kernel_size=(1, 4, 4),
                strides=(1, 1, 1),
                padding='valid')(x)
-    x = MaxPooling3D(pool_size=(1, 7, 7), strides=None, padding='valid')(x)
     x = BatchNormalization()(x)
     x = LeakyReLU(0.2)(x)
     x = Flatten()(x)
+    x = Reshape((D_FRAMES, 256), input_shape=(D_FRAMES * 256,))(x)
+    x = LSTM(1024, input_shape=(D_FRAMES, 256))(x)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
     x = Dense(128)(x)
     x = LeakyReLU(0.2)(x)
     x = Dropout(0.5)(x)
@@ -237,7 +244,7 @@ def make_sequential_discriminator(summary = False):
     model = Model(inputs=inputs, outputs=likelihood)
 
     if summary:
-        print("Discriminator is as follows:")
+        print("Sequential discriminator is as follows:")
         print(model.summary())
 
     return model
