@@ -1,8 +1,9 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
 
-# videos
+# data
 videos/
+PC_vecs/
 
 # Logs
 tf_log/

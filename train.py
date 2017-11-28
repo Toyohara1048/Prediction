@@ -23,8 +23,8 @@ NUM_FRAME = 5
 LENTH_OF_SIDE = 122
 
 # Image saving
-local = True    #Work on local mac or linux with GPU?
-GENERATED_IMAGE_PATH = '/media/hdd/Toyohara/PredictNextPose/generated_image/'
+local = False    #Work on local mac or linux with GPU?
+GENERATED_IMAGE_PATH = '/media/hdd/Toyohara/PredictNextPose/generated_image_LSTM/'
 LOCAL_GENERATED_IMAGE_PATH = 'generated_image/'
 
 # Weight saving
@@ -117,6 +117,15 @@ def train():
 
             generator.save_weights(weight_path+'generator.h5')
             discriminator.save_weights(weight_path+'discriminator.h5')
+
+
+def train_with_PCA():
+    # configuration of GPU usage
+    config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True))
+    session = tf.Session(config=config)
+    KTF.set_session(session)
+
+
 
 
 if __name__ == "__main__":

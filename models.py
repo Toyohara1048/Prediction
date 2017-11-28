@@ -195,3 +195,49 @@ def make_discriminator(summary = False):
         print(model.summary())
 
     return model
+
+def make_sequential_discriminator(summary = False):
+    inputs = Input(shape=(D_FRAMES, LENGTH_OF_SIDE, LENGTH_OF_SIDE, 1))
+    x = Conv3D(32,  # filters
+               kernel_size=(1, 4, 4),
+               strides=(1, 1, 1),
+               padding='same',
+               input_shape=(D_FRAMES, LENGTH_OF_SIDE, LENGTH_OF_SIDE, 1))(inputs)
+    x = LeakyReLU(0.2)(x)
+
+    x = Conv3D(64,  # filters
+               kernel_size=(1, 4, 4),
+               strides=(1, 1, 1),
+               padding='same')(x)
+    x = BatchNormalization()(x)
+    x = LeakyReLU(0.2)(x)
+
+    # x = Conv3D(32,  # filters
+    #            kernel_size=(1, 4, 4),
+    #            strides=(1, 1, 1),
+    #            padding='same')(x)
+    # x = BatchNormalization()(x)
+    # x = LeakyReLU(0.2)(x)
+
+    x = Conv3D(16,  # filters
+               kernel_size=(D_FRAMES, 1, 1),
+               strides=(1, 1, 1),
+               padding='valid')(x)
+    x = MaxPooling3D(pool_size=(1, 7, 7), strides=None, padding='valid')(x)
+    x = BatchNormalization()(x)
+    x = LeakyReLU(0.2)(x)
+    x = Flatten()(x)
+    x = Dense(128)(x)
+    x = LeakyReLU(0.2)(x)
+    x = Dropout(0.5)(x)
+    x = Dense(1)(x)
+
+    likelihood = Activation('sigmoid')(x)
+
+    model = Model(inputs=inputs, outputs=likelihood)
+
+    if summary:
+        print("Discriminator is as follows:")
+        print(model.summary())
+
+    return model
