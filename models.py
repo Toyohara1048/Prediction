@@ -101,21 +101,21 @@ def make_generator(summary = False):
 
 def make_sequential_generator(summary = False):
     inputs = Input(shape=(G_FRAMES, LENGTH_OF_SIDE, LENGTH_OF_SIDE, 1))
-    x = Conv3D(8,  # filters
+    x = Conv3D(32,  # filters
                kernel_size=(1, 5, 5),
                strides=(1, 4, 4),
                padding='valid',
                dilation_rate=(1, 1, 1),
                input_shape=(G_FRAMES, LENGTH_OF_SIDE, LENGTH_OF_SIDE, 1))(inputs)
     x = LeakyReLU(0.2)(x)
-    x = Conv3D(16,  # filters
+    x = Conv3D(64,  # filters
                kernel_size=(1, 5, 5),
                strides=(1, 4, 4),
                padding='valid',
                dilation_rate=(1, 1, 1))(x)
     x = BatchNormalization()(x)
     x = LeakyReLU(0.2)(x)
-    x = Conv3D(32,  # filters
+    x = Conv3D(128,  # filters
                kernel_size=(1, 5, 5),
                strides=(1, 4, 4),
                padding='valid',
@@ -245,6 +245,60 @@ def make_sequential_discriminator(summary = False):
 
     if summary:
         print("Sequential discriminator is as follows:")
+        print(model.summary())
+
+    return model
+
+def make_simple_generator(summary=False):
+    inputs = Input(shape=(128,))
+    x = Dense(units=1024, input_dim=100)(inputs)
+    x = BatchNormalization()(x)
+    x = Activation('relu')(x)
+    x = Dense(64 * 61 * 61)(x)
+    x = BatchNormalization()(x)
+    x = Reshape((61, 61, 64), input_shape=(64*61*61,))(x)
+    x = UpSampling2D((2, 2))(x)
+    x = Conv2D(16, (5, 5), padding='same')(x)
+    x = BatchNormalization()(x)
+    x = Conv2D(1, (5, 5), padding='same')(x)
+
+    generated_image = Activation('tanh')(x)
+
+    model = Model(inputs=inputs, outputs=generated_image)
+
+    if summary:
+        print("Simple generator is as follows:")
+        print(model.summary())
+
+    return model
+
+
+def make_simple_discriminator(summary=False):
+    inputs = Input(shape=(LENGTH_OF_SIDE, LENGTH_OF_SIDE, 1))
+    x = Conv2D(64,  # filters
+               kernel_size=(5, 5),
+               strides=(4, 4),
+               padding='same',
+               input_shape=(LENGTH_OF_SIDE, LENGTH_OF_SIDE, 1))(inputs)
+    x = LeakyReLU(0.2)(x)
+    x = Conv2D(128,  # filters
+               kernel_size=(5, 5),
+               strides=(4, 4),
+               padding='same',
+               input_shape=(LENGTH_OF_SIDE, LENGTH_OF_SIDE, 1))(x)
+    x = LeakyReLU(0.2)(x)
+    x = Flatten()(x)
+    x = Dense(256)(x)
+    x = LeakyReLU(0.2)(x)
+    x = Dropout(0.5)(x)
+    x = Dense(1)(x)
+
+    likelihood = Activation('sigmoid')(x)
+
+    model = Model(inputs=inputs, outputs=likelihood)
+
+    if summary:
+        print("Simple discriminator is as follows:")
         print(model.summary())
 
     return model

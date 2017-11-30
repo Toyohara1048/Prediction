@@ -16,6 +16,8 @@ test_codes/
 
 # generated images
 generated_image/
+simple_generated_image/
 
 # weights
 weight/
+simple_weight/
