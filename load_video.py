@@ -3,10 +3,10 @@ import cv2
 import os
 import math
 
-LOCAL = False
+LOCAL = True
 
 NUM_OF_FRAMES = 5
-LENGTH_OF_SIDE = 122
+LENGTH_OF_SIDE = 488
 
 
 def load_5frames(name):
@@ -34,8 +34,8 @@ def load_5frames(name):
 
         quarter = cv2.resize(gray, None, fx=1/4, fy=1/4)
 
-        #train = np.append(train, np.array(gray[0:488, 0:488]))
-        train = np.append(train, np.array(quarter[0:122, 0:122]))
+        train = np.append(train, np.array(gray[0:488, 0:488]))
+        #train = np.append(train, np.array(quarter[0:122, 0:122]))
 
         # 次のフレーム読み込み
         end_flag, c_frame = org.read()
@@ -66,16 +66,17 @@ def load_data(num_of_data):
     return data
 
 
-def load_PC(num_of_data):
+def load_PC():
     """
     Loads primary components from entire data sets
-    :param num_of_data: The max number(name) of 5-frame sequence data to load
     :return: np.array (shape: (the true number of data, NUM_OF_FRAMES, 3))
     """
 
+    data = np.load('PCA_result.npz')
+    return data['center_X'], data['center_Y'], data['tan_X'], data['tan_Y']
 
-# 以下実験
-# data = load_5frames(3)
+#以下実験
+# data = load_5frames(2)
 # img = data[0]
 # # nLabels, labeledImage, stats, centeroids = cv2.connectedComponentsWithStats(img)
 # # print(nLabels)
@@ -140,4 +141,3 @@ def load_PC(num_of_data):
 #
 # cv2.imshow("test", img)
 # cv2.waitKey(0)
-

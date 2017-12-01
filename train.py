@@ -5,25 +5,27 @@ import keras.callbacks
 from keras.optimizers import Adam
 import keras.backend.tensorflow_backend as KTF
 
-
 import numpy as np
 import time
 import os
 import tensorflow as tf
 from PIL import Image
+from sklearn.model_selection import train_test_split
 
-from load_video import load_data
+from load_video import load_data, load_PC
 from models import make_generator, make_discriminator, make_sequential_generator
+from NNmodels import make_predictor, make_recurrent_predictor
 
 # Hyper paremeters
 NUM_OF_DATA = 100
 BATCH_SIZE = 2
-NUM_EPOCH = 100
+NUM_EPOCH = 30
 NUM_FRAME = 5
 LENTH_OF_SIDE = 122
+TEST_SIZE = 0.2
 
 # Image saving
-local = False    #Work on local mac or linux with GPU?
+local = True    #Work on local mac or linux with GPU?
 GENERATED_IMAGE_PATH = '/media/hdd/Toyohara/PredictNextPose/generated_image_LSTM/'
 LOCAL_GENERATED_IMAGE_PATH = 'generated_image/'
 
@@ -125,8 +127,34 @@ def train_with_PCA():
     session = tf.Session(config=config)
     KTF.set_session(session)
 
+    # about path for saving images
+    if local:
+        path = LOCAL_WEIGHT_PATH
+    else:
+        path = WEIGHT_PATH
 
+    # Data load
+    centers_X, centers_Y, tans_X, tans_Y = load_PC()
+
+    # Make model
+    #model = make_predictor()
+    model = make_recurrent_predictor()
+    model.compile(optimizer='sgd',
+                  loss={'center_out': 'mean_squared_error', 'tan_out': 'mean_squared_error'},
+                  loss_weights={'center_out': 1, 'tan_out': 1})
+
+    # Learn
+    model.fit({'center_in': centers_X, 'tan_in': tans_X},
+              {'center_out': centers_Y, 'tan_out': tans_Y},
+              epochs=NUM_EPOCH,
+              batch_size=BATCH_SIZE,
+              validation_split=TEST_SIZE)
+
+    # Save
+    model.save(path+'predictor.h5')
+    model.save_weights(path+'predictor_weight.h5')
 
 
 if __name__ == "__main__":
-    train()
+    #train()
+    train_with_PCA()
