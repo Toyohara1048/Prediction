@@ -3,6 +3,9 @@ __pycache__/
 
 # data
 videos/
+videos_10frame/
+videos_contour/
+org_videos/
 PC_vecs/
 
 # Logs

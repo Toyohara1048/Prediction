@@ -15,14 +15,14 @@ from load_video import load_data
 from models import make_simple_discriminator, make_simple_generator
 
 # Hyper paremeters
-NUM_OF_DATA = 3192
-BATCH_SIZE = 2
+NUM_OF_DATA = 1427
+BATCH_SIZE = 3
 NUM_EPOCH = 100
 NUM_FRAME = 5
 LENTH_OF_SIDE = 122
 
 # Image saving
-local = False    #Work on local mac or linux with GPU?
+local = True    #Work on local mac or linux with GPU?
 GENERATED_IMAGE_PATH = '/media/hdd/Toyohara/PredictNextPose/simple_generated_image/'
 LOCAL_GENERATED_IMAGE_PATH = 'simple_generated_image/'
 

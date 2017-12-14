@@ -3,14 +3,14 @@ import numpy as np
 import os
 import math
 
-ORG_FILE_NAME = "videos/data.avi"
+ORG_FILE_NAME = "org_videos/data7.avi"
 
 
 FRAME_RATE = 40
 NUM_OF_FRAMES = 5
 LENGTH_OF_SIDE = 488
 
-start_num = 141
+start_num = 8833
 
 def make_5frames():
     # 元ビデオファイル読み込み
@@ -85,7 +85,7 @@ def drawAxis(img, start_pt, vec, colour, length):
 
 def PCA(image):
     rgb = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
-    temp, contours, hierarchy = cv2.findContours(image, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
+    temp, contours, hierarchy = cv2.findContours(image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     # sort by area
     index_and_area = []
@@ -106,9 +106,9 @@ def PCA(image):
     pt = (mean[0][0], mean[0][1])
     vec = (eigenvectors[0][0], eigenvectors[0][1])
     tan = eigenvectors[0][1] / eigenvectors[0][0]
-    # drawAxis(rgb, pt, vec, (255, 255, 0), 150)
-    # cv2.imshow("test", rgb)
-    # cv2.waitKey(0)
+    drawAxis(rgb, pt, vec, (255, 255, 0), 150)
+    cv2.imshow("test", rgb)
+    cv2.waitKey(0)
 
     return pt, tan
 
@@ -127,6 +127,7 @@ def PCA_on_5frame(name):
 
     while end_flag == True:
         gray = cv2.cvtColor(c_frame, cv2.COLOR_BGR2GRAY)
+        ret, gray = cv2.threshold(gray, 200, 255, cv2.THRESH_BINARY)
         frames = np.append(frames, np.array(gray[0:488, 0:488]))
 
         # 次のフレーム読み込み
@@ -136,8 +137,13 @@ def PCA_on_5frame(name):
 
     for i in range(NUM_OF_FRAMES):
         center, tan = PCA(frames[i][0:LENGTH_OF_SIDE, 0:LENGTH_OF_SIDE])
+
+        # Normalize
+        # center: [0:488] -> [0:1]
         centers = np.append(centers, np.array((center[0]/LENGTH_OF_SIDE, center[1]/LENGTH_OF_SIDE)))
-        tans = np.append(tans, np.array((tan)))
+
+        # tan: theta
+        tans = np.append(tans, np.array(math.atan(tan)/math.pi))
 
     return centers, tans
 
@@ -169,7 +175,167 @@ def make_PC_on_all(num):
     print(tans_X.shape)
 
 
+def make_optical_flow():
+    # params for ShiTomasi corner detection
+    feature_params = dict(maxCorners=100,
+                          qualityLevel=0.3,
+                          minDistance=7,
+                          blockSize=7)
+
+    # Parameters for lucas kanade optical flow
+    lk_params = dict(winSize=(15, 15),
+                     maxLevel=2,
+                     criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
+
+    # Create some random colors
+    color = np.random.randint(0, 255, (100, 3))
+
+    # 元ビデオファイル読み込み
+    org = cv2.VideoCapture("org_videos/data18.avi")
+    org_color = cv2.VideoCapture("org_videos/output18.avi")
+
+    # 保存ビデオファイルの準備
+    end_flag, c_frame = org.read()
+    end_flag_color, color_frame = org_color.read()
+    height, width, channels = c_frame.shape
+    print("The shape of video is:")
+    print(c_frame.shape)
+
+    # Masking
+    masked = cv2.bitwise_and(color_frame, c_frame)
+
+    old_gray = cv2.cvtColor(masked, cv2.COLOR_BGR2GRAY)
+    p0 = cv2.goodFeaturesToTrack(old_gray, mask=None, **feature_params)
+    # Create a mask image for drawing purposes
+    mask = np.zeros_like(c_frame)
+
+    hsv = np.zeros_like(c_frame)
+    hsv[..., 1] = 255
+
+    # 動画の読み込み
+    video = np.array([], dtype=np.uint8)
+    frame_count = 0
+    while end_flag is True:
+        # cropping
+        # cropped = c_frame[0:LENGTH_OF_SIDE, 80:80 + LENGTH_OF_SIDE]
+        # cv2.imshow("test", cropped)
+        # cv2.waitKey(1)
+        #video = np.append(video, np.array(cropped[0:LENGTH_OF_SIDE, 0:LENGTH_OF_SIDE]))
+
+        # 次のフレーム読み込み
+        end_flag, c_frame = org.read()
+        end_flag_color, color_frame = org_color.read()
+        frame_count += 1
+
+        # Masking
+        masked = cv2.bitwise_and(color_frame, c_frame)
+        cv2.imshow("Masked", masked)
+
+        frame_gray = cv2.cvtColor(masked, cv2.COLOR_BGR2GRAY)
+        # p1, st, err = cv2.calcOpticalFlowPyrLK(old_gray, frame_gray, p0, None, **lk_params)
+        #
+        # # Select good points
+        # good_new = p1[st == 1]
+        # good_old = p0[st == 1]
+        #
+        # # draw the tracks
+        # frame_with_opti = c_frame.copy()
+        # for i, (new, old) in enumerate(zip(good_new, good_old)):
+        #     a, b = new.ravel()
+        #     c, d = old.ravel()
+        #     mask = cv2.line(mask, (a, b), (c, d), color[i].tolist(), 2)
+        #     frame_with_opti = cv2.circle(frame_with_opti, (a, b), 5, color[i].tolist(), -1)
+        # img = cv2.add(c_frame, mask)
+        # cv2.imshow("result", img)
+
+        # Dense
+        frame_with_dense = masked.copy()
+        flow = cv2.calcOpticalFlowFarneback(old_gray, frame_gray, None, 0.5, 3, 15, 3, 5, 1.2, 0)
+        # mag, ang = cv2.cartToPolar(flow[..., 0], flow[..., 1])
+        # hsv[..., 0] = ang * 180 / np.pi / 2
+        # hsv[..., 2] = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
+        # rgb = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+        step = 16
+        h, w = old_gray.shape[:2]
+        y, x = np.mgrid[step/2:h:step, step/2:w:step].reshape(2,-1)
+
+        fx, fy = flow[y.astype(np.int),x.astype(np.int)].T
+        lines = np.vstack([x, y, x + fx, y + fy]).T.reshape(-1, 2, 2)
+        lines = np.int32(lines + 0.5)
+        cv2.polylines(frame_with_dense, lines, 0, (0, 255, 0))
+        for (x1, y1), (x2, y2) in lines:
+            cv2.circle(frame_with_dense, (x1, y1), 1, (0, 255, 0), -1)
+        cv2.imshow("result2", frame_with_dense)
+
+        # Warp dense
+        flow = -flow
+        flow[:, :, 0] += np.arange(w)
+        flow[:, :, 1] += np.arange(h)[:, np.newaxis]
+        warp = cv2.remap(frame_gray, flow, None, cv2.INTER_LINEAR)
+        cv2.imshow("result3", warp)
+
+
+        cv2.waitKey(0)
+        old_gray = frame_gray.copy()
+
+        # p0 = good_new.reshape(-1, 1, 2)
+
+    cv2.destroyAllWindows()
+    org.release()
+
+
+def make_contours(end_num):
+    count = 0
+
+    for i in range(end_num):
+        path = "videos/" + str(i) + ".avi"
+        if not os.path.exists(path):
+            continue
+
+        # 元ビデオファイル読み込み
+        org = cv2.VideoCapture(path)
+        end_flag, c_frame = org.read()
+
+
+        # 動画の読み込み，加工および保存
+        #video = np.array([], dtype=np.uint8)
+        # Define the codec and create VideoWriter object
+        fourcc = cv2.VideoWriter_fourcc(*'MJPG')
+        rec = cv2.VideoWriter("videos_contour/" + str(count) + ".avi", fourcc, FRAME_RATE, (LENGTH_OF_SIDE, LENGTH_OF_SIDE))
+        while end_flag is True:
+            gray = cv2.cvtColor(c_frame, cv2.COLOR_BGR2GRAY)
+            ret, gray = cv2.threshold(gray, 200, 255, cv2.THRESH_BINARY)
+            dst = np.zeros_like(gray, dtype=np.uint8)
+            dst = cv2.cvtColor(dst, cv2.COLOR_GRAY2BGR)
+
+            # Draw contours
+            temp, contours, hierarchy = cv2.findContours(gray, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+            # sort by area
+            index_and_area = []
+            for index in range(0, len(contours)):
+                area = cv2.contourArea(contours[index])
+                if area > 1e2:
+                    index_and_area.append((index, area))
+            index_and_area.sort(key=lambda taple: taple[1], reverse=True)
+            cv2.drawContours(dst, contours, index_and_area[0][0], (255, 255, 255), 10, 8, hierarchy, 0)
+
+            # Save in rec
+            rec.write(dst[0:LENGTH_OF_SIDE, 0:LENGTH_OF_SIDE, 0:3])
+
+            # 次のフレーム読み込み
+            end_flag, c_frame = org.read()
+
+        rec.release()
+        count += 1
+
+    org.release()
+
+
+
+
 if __name__ == "__main__":
     #make_5frames()
-    #PCA_on_5frame(2)
-    make_PC_on_all(3192)
+    #PCA_on_5frame(61)
+    #make_PC_on_all(3192)
+    make_optical_flow()
+    #make_contours(6406)

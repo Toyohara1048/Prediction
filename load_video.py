@@ -6,7 +6,7 @@ import math
 LOCAL = True
 
 NUM_OF_FRAMES = 5
-LENGTH_OF_SIDE = 488
+LENGTH_OF_SIDE = 122
 
 
 def load_5frames(name):
@@ -19,7 +19,7 @@ def load_5frames(name):
     train = np.array([], dtype=np.uint8)
 
     if LOCAL:
-        file_name = "videos/" + str(name) + ".avi"
+        file_name = "videos_contour/" + str(name) + ".avi"
     else:
         file_name = "/media/hdd/Toyohara/PredictNextPose/videos/" + str(name) + ".avi"
     if not os.path.exists(file_name):
@@ -34,8 +34,8 @@ def load_5frames(name):
 
         quarter = cv2.resize(gray, None, fx=1/4, fy=1/4)
 
-        train = np.append(train, np.array(gray[0:488, 0:488]))
-        #train = np.append(train, np.array(quarter[0:122, 0:122]))
+        #train = np.append(train, np.array(gray[0:488, 0:488]))
+        train = np.append(train, np.array(quarter[0:122, 0:122]))
 
         # 次のフレーム読み込み
         end_flag, c_frame = org.read()

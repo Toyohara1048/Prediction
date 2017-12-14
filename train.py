@@ -17,9 +17,9 @@ from models import make_generator, make_discriminator, make_sequential_generator
 from NNmodels import make_predictor, make_recurrent_predictor
 
 # Hyper paremeters
-NUM_OF_DATA = 100
+NUM_OF_DATA = 3192
 BATCH_SIZE = 2
-NUM_EPOCH = 30
+NUM_EPOCH = 20
 NUM_FRAME = 5
 LENTH_OF_SIDE = 122
 TEST_SIZE = 0.2

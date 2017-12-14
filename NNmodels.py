@@ -61,7 +61,7 @@ def make_recurrent_predictor(summary=False):
     x_tan = Reshape((G_FRAMES, 1), input_shape=(G_FRAMES,))(input_tan)
     x_tan = SimpleRNN(128, input_shape=(G_FRAMES, 1))(x_tan)
     x_tan = Dense(1)(x_tan)
-    output_tan = Activation('relu', name='tan_out')(x_tan)
+    output_tan = Activation('linear', name='tan_out')(x_tan)
 
     model = Model(inputs=[input_center, input_tan], outputs=[output_center, output_tan])
 
