@@ -201,8 +201,24 @@ def make_optical_flow():
     print("The shape of video is:")
     print(c_frame.shape)
 
+    # Draw contour
+    gray = cv2.cvtColor(c_frame, cv2.COLOR_BGR2GRAY)
+    ret, gray = cv2.threshold(gray, 200, 255, cv2.THRESH_BINARY)
+    dst = np.zeros_like(c_frame, dtype=np.uint8)
+    #dst = cv2.cvtColor(dst, cv2.COLOR_GRAY2BGR)
+    temp, contours, hierarchy = cv2.findContours(gray, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    # sort by area
+    index_and_area = []
+    for index in range(0, len(contours)):
+        area = cv2.contourArea(contours[index])
+        if area > 1e2:
+            index_and_area.append((index, area))
+    if len(index_and_area) > 0:
+        index_and_area.sort(key=lambda taple: taple[1], reverse=True)
+        cv2.drawContours(dst, contours, index_and_area[0][0], (255, 255, 255), 20, 8, hierarchy, 0)
+
     # Masking
-    masked = cv2.bitwise_and(color_frame, c_frame)
+    masked = cv2.bitwise_and(color_frame, dst)
 
     old_gray = cv2.cvtColor(masked, cv2.COLOR_BGR2GRAY)
     p0 = cv2.goodFeaturesToTrack(old_gray, mask=None, **feature_params)
@@ -227,37 +243,40 @@ def make_optical_flow():
         end_flag_color, color_frame = org_color.read()
         frame_count += 1
 
+        # Draw contour
+        gray = cv2.cvtColor(c_frame, cv2.COLOR_BGR2GRAY)
+        ret, gray = cv2.threshold(gray, 200, 255, cv2.THRESH_BINARY)
+        dst = np.zeros_like(c_frame, dtype=np.uint8)
+        # dst = cv2.cvtColor(dst, cv2.COLOR_GRAY2BGR)
+        temp, contours, hierarchy = cv2.findContours(gray, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+        # sort by area
+        index_and_area = []
+        for index in range(0, len(contours)):
+            area = cv2.contourArea(contours[index])
+            if area > 1e2:
+                index_and_area.append((index, area))
+
+        if len(index_and_area) > 0:
+            index_and_area.sort(key=lambda taple: taple[1], reverse=True)
+            cv2.drawContours(dst, contours, index_and_area[0][0], (255, 255, 255), 80, 8, hierarchy, -1)
+
         # Masking
-        masked = cv2.bitwise_and(color_frame, c_frame)
+        masked = cv2.bitwise_and(color_frame, dst)
         cv2.imshow("Masked", masked)
 
         frame_gray = cv2.cvtColor(masked, cv2.COLOR_BGR2GRAY)
-        # p1, st, err = cv2.calcOpticalFlowPyrLK(old_gray, frame_gray, p0, None, **lk_params)
-        #
-        # # Select good points
-        # good_new = p1[st == 1]
-        # good_old = p0[st == 1]
-        #
-        # # draw the tracks
-        # frame_with_opti = c_frame.copy()
-        # for i, (new, old) in enumerate(zip(good_new, good_old)):
-        #     a, b = new.ravel()
-        #     c, d = old.ravel()
-        #     mask = cv2.line(mask, (a, b), (c, d), color[i].tolist(), 2)
-        #     frame_with_opti = cv2.circle(frame_with_opti, (a, b), 5, color[i].tolist(), -1)
-        # img = cv2.add(c_frame, mask)
-        # cv2.imshow("result", img)
 
         # Dense
         frame_with_dense = masked.copy()
         flow = cv2.calcOpticalFlowFarneback(old_gray, frame_gray, None, 0.5, 3, 15, 3, 5, 1.2, 0)
-        # mag, ang = cv2.cartToPolar(flow[..., 0], flow[..., 1])
-        # hsv[..., 0] = ang * 180 / np.pi / 2
-        # hsv[..., 2] = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
-        # rgb = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+        mag, ang = cv2.cartToPolar(flow[..., 0], flow[..., 1])
+        hsv[..., 0] = ang * 180 / np.pi / 2
+        hsv[..., 2] = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
+        rgb = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
         step = 16
         h, w = old_gray.shape[:2]
         y, x = np.mgrid[step/2:h:step, step/2:w:step].reshape(2,-1)
+        cv2.imshow("result3", rgb)
 
         fx, fy = flow[y.astype(np.int),x.astype(np.int)].T
         lines = np.vstack([x, y, x + fx, y + fy]).T.reshape(-1, 2, 2)
@@ -271,11 +290,11 @@ def make_optical_flow():
         flow = -flow
         flow[:, :, 0] += np.arange(w)
         flow[:, :, 1] += np.arange(h)[:, np.newaxis]
-        warp = cv2.remap(frame_gray, flow, None, cv2.INTER_LINEAR)
-        cv2.imshow("result3", warp)
+        warp = cv2.remap(masked, flow, None, cv2.INTER_LINEAR)
+        cv2.imshow("result warp", warp)
 
 
-        cv2.waitKey(0)
+        cv2.waitKey(1)
         old_gray = frame_gray.copy()
 
         # p0 = good_new.reshape(-1, 1, 2)
@@ -331,11 +350,57 @@ def make_contours(end_num):
     org.release()
 
 
+def realtimeTest():
+    cap = cv2.VideoCapture(0)
+
+    ret, frame = cap.read()
+
+    old_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    hsv = np.zeros_like(frame)
+    hsv[..., 1] = 255
+
+    while True:
+        ret, next_frame = cap.read()
+
+        frame_gray = cv2.cvtColor(next_frame, cv2.COLOR_BGR2GRAY)
+
+        # Dense
+        frame_with_dense = next_frame.copy()
+        flow = cv2.calcOpticalFlowFarneback(old_gray, frame_gray, None, 0.5, 3, 15, 3, 5, 1.2, 0)
+        mag, ang = cv2.cartToPolar(flow[..., 0], flow[..., 1])
+        hsv[..., 0] = ang * 180 / np.pi / 2
+        hsv[..., 2] = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
+        rgb = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+        step = 16
+        h, w = old_gray.shape[:2]
+        y, x = np.mgrid[step / 2:h:step, step / 2:w:step].reshape(2, -1)
+        cv2.imshow("result3", rgb)
+
+        fx, fy = flow[y.astype(np.int), x.astype(np.int)].T
+        lines = np.vstack([x, y, x + fx, y + fy]).T.reshape(-1, 2, 2)
+        lines = np.int32(lines + 0.5)
+        cv2.polylines(frame_with_dense, lines, 0, (0, 255, 0))
+        for (x1, y1), (x2, y2) in lines:
+            cv2.circle(frame_with_dense, (x1, y1), 1, (0, 255, 0), -1)
+        cv2.imshow("result2", frame_with_dense)
+
+        # Warp dense
+        flow = -flow
+        flow[:, :, 0] += np.arange(w)
+        flow[:, :, 1] += np.arange(h)[:, np.newaxis]
+        warp = cv2.remap(next_frame, flow, None, cv2.INTER_LINEAR)
+        cv2.imshow("result warp", warp)
+
+        cv2.waitKey(1)
+        old_gray = frame_gray.copy()
+
+
 
 
 if __name__ == "__main__":
     #make_5frames()
     #PCA_on_5frame(61)
     #make_PC_on_all(3192)
-    make_optical_flow()
+    #make_optical_flow()
     #make_contours(6406)
+    realtimeTest()
